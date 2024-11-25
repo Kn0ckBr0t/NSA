@@ -1,26 +1,33 @@
 import React, { useState } from 'react';
-import { Text, TextInput, View, TouchableOpacity } from 'react-native';
+import { Text, TextInput, View, TouchableOpacity, Alert } from 'react-native';
 import styles from '../assets/css/login';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../components/firebase';
 
 export default function Cadastro({ navigation }) {
   const [cadrm, setCadrm] = useState("");
   const [cadpassword, setCadpassword] = useState("");
 
-  const fazerCad = () => {
-      try {
-        const usersCollection = collection(db, 'users');
+  const fazerCad = async () => {
+    try {
+      const usersCollection = collection(db, 'users');
+      const querySnapshot = await getDocs(query(usersCollection, where("RM", "==", cadrm)));
 
-        addDoc(usersCollection, {
-          RM: cadrm,
-          Senha: cadpassword,
-        });
-
-        navigation.navigate("Login");
-      } catch (error) {
-        console.error("Error adding document: ", error)
+      if (!querySnapshot.empty) {
+        Alert.alert("Esse RM já existe.");
+        return;
       }
+
+      await addDoc(usersCollection, {
+        RM: cadrm,
+        Senha: cadpassword,
+      });
+
+      navigation.navigate("Login");
+    } catch (error) {
+      Alert.alert("Não foi possível cadastrar. Tente novamente.");
+      console.error("Error adding document: ", error);
+    }
   };
 
   return (
